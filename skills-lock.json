@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "split-receipt": {
+      "source": "./skills/split-receipt/dist",
+      "sourceType": "local",
+      "computedHash": "5491d660ac2a529c3bd9bbddb24608b6d056e8e9c5de06ba24d21ab300008924"
+    }
+  }
+}

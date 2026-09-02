@@ -1,0 +1,13 @@
+{
+  // tsup (esbuild) does the emitting, so this config only type-checks. That is
+  // why it covers the tests too and never writes output.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+
+    // This is a CLI: it reads process.env and writes to stdout, so Node's
+    // globals are exactly what it may rely on.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "tsup.config.ts"]
+}

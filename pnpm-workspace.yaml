@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://json.schemastore.org/pnpm-workspace.json
+
+# Two kinds of workspace member, split by who consumes them:
+#   packages/  libraries -- the engine proper, imported by other members.
+#   skills/    Claude Agent Skills -- a SKILL.md plus the scripts it runs. A
+#              skill is a workspace member so its scripts can depend on the
+#              engine via `workspace:*` instead of duplicating it.
+# See the README in each directory.
+packages:
+  - "packages/*"
+  - "skills/*"
+
+# In the dev container /workspace is a separate mount from $HOME, so pnpm's
+# default store lands in /workspace/.pnpm-store -- shared with every other
+# project on that volume, and often owned by another user. Keeping the store in
+# the repo avoids that collision while staying on the same filesystem, which is
+# what lets pnpm hardlink instead of copy. Gitignored.
+storeDir: .pnpm-store
+
+# pnpm refuses postinstall scripts unless a package is listed here. esbuild's
+# downloads the platform binary that tsup runs on; without it every build
+# fails with "esbuild binary not found".
+allowBuilds:
+  esbuild: true

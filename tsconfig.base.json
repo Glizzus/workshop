@@ -1,0 +1,31 @@
+{
+  // Path-shaped options -- rootDir, outDir, include, exclude, files -- are
+  // deliberately absent: TypeScript resolves those against the directory of the
+  // config that *declares* them, so putting them here would point every package
+  // at the repo root. They belong in the package config.
+  "compilerOptions": {
+    // Node 24 in the dev container; nodenext keeps module resolution honest
+    // about ESM/CJS interop and file extensions.
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+
+    // No ambient types unless a config asks for them, so shipped code cannot
+    // lean on host globals by accident. Test configs opt into Node's.
+    "types": []
+  }
+}

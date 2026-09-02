@@ -1,0 +1,33 @@
+{
+  "name": "@ynab-engine/split-receipt",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Claude skill that splits a receipt image into YNAB categories.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "bin": {
+    "list-categories": "./dist/scripts/list-categories.js",
+    "find-transactions-by-total": "./dist/scripts/find-transactions-by-total.js",
+    "update-transaction": "./dist/scripts/update-transaction.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ynab-engine/ynab": "workspace:*",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

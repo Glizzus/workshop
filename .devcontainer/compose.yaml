@@ -1,0 +1,14 @@
+services:
+  dev:
+    build:
+      context: .
+    command: ["sleep", "infinity"]
+    volumes:
+      # The repo's *parent* is mounted, so every sibling checkout is visible
+      # under /workspace and one container can serve them all. This repo lands
+      # at /workspace/ynab-engine -- see workspaceFolder in devcontainer.json.
+      - ../..:/workspace
+      - claude-code-data:/home/vscode/.claude
+
+volumes:
+  claude-code-data:
