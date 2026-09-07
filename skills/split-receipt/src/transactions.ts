@@ -1,4 +1,4 @@
-import type { TransactionDetail } from "@ynab-engine/ynab";
+import type { TransactionDetail } from "@glizzus/ynab";
 
 /**
  * Renders the transactions that matched a receipt total as markdown, newest

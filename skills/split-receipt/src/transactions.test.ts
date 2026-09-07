@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { SubTransaction, TransactionDetail } from "@ynab-engine/ynab";
+import type { SubTransaction, TransactionDetail } from "@glizzus/ynab";
 
 import { renderTransactions, threeMonthsBefore } from "./transactions.js";
 

@@ -1,34 +1,32 @@
 {
-  "name": "@glizzus/ynab",
+  "name": "@glizzus/pr-preview",
   "version": "0.0.0",
   "private": true,
-  "description": "Client for the YNAB API.",
+  "description": "Keeps one git worktree per open pull request of a GitHub repository, running a command after each checkout.",
   "files": [
     "dist"
   ],
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+  "bin": {
+    "pr-preview": "./dist/main.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "prepare": "pnpm build",
+    "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@glizzus/git": "workspace:*",
+    "@glizzus/github": "workspace:*",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
-  },
-  "dependencies": {
-    "zod": "^4.5.4"
   }
 }

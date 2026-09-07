@@ -8,9 +8,9 @@ Layout of a package:
 
 ```
 packages/<name>/
-  package.json     name is @ynab-engine/<name>
+  package.json     name is @glizzus/<name>
   src/             TypeScript sources
   dist/            build output, gitignored
 ```
 
-Depend on a sibling with `"@ynab-engine/<name>": "workspace:*"`.
+Depend on a sibling with `"@glizzus/<name>": "workspace:*"`.

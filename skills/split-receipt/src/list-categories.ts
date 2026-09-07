@@ -5,7 +5,7 @@
 //
 //   list-categories [plan-id]
 
-import { YNABClient } from "@ynab-engine/ynab";
+import { YNABClient } from "@glizzus/ynab";
 
 import { renderCategories } from "./categories.js";
 

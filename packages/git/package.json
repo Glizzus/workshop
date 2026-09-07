@@ -1,8 +1,8 @@
 {
-  "name": "@glizzus/ynab",
+  "name": "@glizzus/git",
   "version": "0.0.0",
   "private": true,
-  "description": "Client for the YNAB API.",
+  "description": "Drives the git CLI: fetch, checkout, and worktrees for one repository.",
   "files": [
     "dist"
   ],
@@ -27,8 +27,5 @@
     "@types/node": "^24.13.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
-  },
-  "dependencies": {
-    "zod": "^4.5.4"
   }
 }

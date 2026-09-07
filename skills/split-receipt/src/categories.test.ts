@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CategoriesData, Category, CategoryGroupWithCategories } from "@ynab-engine/ynab";
+import type { CategoriesData, Category, CategoryGroupWithCategories } from "@glizzus/ynab";
 
 import { renderCategories } from "./categories.js";
 

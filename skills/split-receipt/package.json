@@ -1,5 +1,5 @@
 {
-  "name": "@ynab-engine/split-receipt",
+  "name": "@glizzus/split-receipt",
   "version": "0.0.0",
   "private": true,
   "description": "Claude skill that splits a receipt image into YNAB categories.",
@@ -21,7 +21,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@ynab-engine/ynab": "workspace:*",
+    "@glizzus/ynab": "workspace:*",
     "zod": "^4.5.4"
   },
   "devDependencies": {

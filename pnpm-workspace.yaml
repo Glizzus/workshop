@@ -5,10 +5,13 @@
 #   skills/    Claude Agent Skills -- a SKILL.md plus the scripts it runs. A
 #              skill is a workspace member so its scripts can depend on the
 #              engine via `workspace:*` instead of duplicating it.
+#   apps/      Runnable programs -- daemons and CLIs that are started rather
+#              than imported or installed.
 # See the README in each directory.
 packages:
   - "packages/*"
   - "skills/*"
+  - "apps/*"
 
 # In the dev container /workspace is a separate mount from $HOME, so pnpm's
 # default store lands in /workspace/.pnpm-store -- shared with every other

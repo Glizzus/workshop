@@ -1,4 +1,4 @@
-# @ynab-engine/ynab
+# @glizzus/ynab
 
 Talks to the [YNAB API](https://api.ynab.com). This is the one package that
 knows about HTTP, tokens, and YNAB's wire format; everything above it works

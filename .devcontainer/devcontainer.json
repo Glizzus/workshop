@@ -2,7 +2,7 @@
   "name": "YNAB Engine",
   "dockerComposeFile": "compose.yaml",
   "service": "dev",
-  "workspaceFolder": "/workspace/ynab-engine",
+  "workspaceFolder": "/workspace/workshop",
   "features": {
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },

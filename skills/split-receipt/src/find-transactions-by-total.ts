@@ -7,7 +7,7 @@
 //
 // `total` is the total as printed on the receipt, e.g. 94.02 or $1,234.56.
 
-import { findTransactionsByTotal, parseMilliunits, YNABClient } from "@ynab-engine/ynab";
+import { findTransactionsByTotal, parseMilliunits, YNABClient } from "@glizzus/ynab";
 
 import { renderTransactions, threeMonthsBefore } from "./transactions.js";
 

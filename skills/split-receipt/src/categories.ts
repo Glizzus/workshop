@@ -1,4 +1,4 @@
-import type { CategoriesData } from "@ynab-engine/ynab";
+import type { CategoriesData } from "@glizzus/ynab";
 
 /**
  * Renders a plan's categories as the markdown SKILL.md expects in

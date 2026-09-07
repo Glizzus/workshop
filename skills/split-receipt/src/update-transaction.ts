@@ -4,11 +4,11 @@
 //
 //   update-transaction <payload.json>
 //
-// The file's shape is UpdatePayload from @ynab-engine/ynab.
+// The file's shape is UpdatePayload from @glizzus/ynab.
 
 import { readFile } from "node:fs/promises";
 
-import { UpdatePayload, YNABClient, YNABError, toSplitTransaction } from "@ynab-engine/ynab";
+import { UpdatePayload, YNABClient, YNABError, toSplitTransaction } from "@glizzus/ynab";
 import { z } from "zod";
 
 const path = process.argv[2];
