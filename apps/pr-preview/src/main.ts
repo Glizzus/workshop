@@ -1,31 +1,32 @@
 #!/usr/bin/env node
-// Polls a GitHub repository every five minutes and keeps one detached git
-// worktree per open pull request under a root directory, each with a port of
-// its own. If the repository ships `.pr-preview/up`, it runs in the worktree
-// after it is created or moved to a new head; `.pr-preview/down` runs before
-// the worktree is removed.
+// Polls a GitHub repository every minute and keeps one detached git
+// worktree per open pull request, each with a port of its own. Everything
+// lives under one directory the daemon owns: a bare clone at `repo.git`,
+// worktrees at `pr-<number>`, and `state.json`. If the repository ships
+// `.pr-preview/up`, it runs in the worktree after it is created or moved to
+// a new head; `.pr-preview/down` runs before the worktree is removed.
 //
-//   pr-preview <owner/name> [--checkout <dir>] [--root <dir>] [--allow-forks]
+//   pr-preview <owner/name> [dir] [--allow-forks]
 //
-// GH_TOKEN must be set. GITHUB_API_URL overrides the API base URL.
+// `dir` defaults to `./<name>`. GH_TOKEN must be set; it authenticates both
+// the API and git. GITHUB_API_URL overrides the API base URL.
 
+import { access, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
-import { Git } from "@glizzus/git";
-import { GitHubClient, isFromFork } from "@glizzus/github";
+import { Git, type ConfigEntry } from "@glizzus/git";
+import { GitHubClient, cloneUrl, isFromFork, parseRepository } from "@glizzus/github";
 
 import { plan } from "./plan.js";
 import { allocatePort, apply, existingPreviews, previewDir, runHook } from "./preview.js";
 import { readState, writeState } from "./state.js";
 
-const INTERVAL_MS = 5 * 60 * 1000;
+const INTERVAL_MS = 1 * 60 * 1000;
 
-const usage = "usage: pr-preview <owner/name> [--checkout <dir>] [--root <dir>] [--allow-forks]\n";
+const usage = "usage: pr-preview <owner/name> [dir] [--allow-forks]\n";
 
 const options = {
-  checkout: { type: "string", default: "." },
-  root: { type: "string", default: ".pr-preview" },
   "allow-forks": { type: "boolean", default: false },
 } as const;
 
@@ -37,12 +38,19 @@ try {
   process.exit(2);
 }
 
-const repoArg = args.positionals[0];
-if (!repoArg) {
+const [repoArg, dirArg] = args.positionals;
+if (!repoArg || args.positionals.length > 2) {
   process.stderr.write(usage);
   process.exit(2);
 }
 const repo: string = repoArg;
+let name: string;
+try {
+  ({ name } = parseRepository(repo));
+} catch (error) {
+  process.stderr.write(`pr-preview: ${(error as Error).message}\n${usage}`);
+  process.exit(2);
+}
 
 const token = process.env["GH_TOKEN"];
 if (!token) {
@@ -50,19 +58,39 @@ if (!token) {
   process.exit(1);
 }
 
-const checkout = path.resolve(args.values.checkout);
-const root = path.resolve(args.values.root);
+const root = path.resolve(dirArg ?? name);
+const cloneDir = path.join(root, "repo.git");
 const allowForks = args.values["allow-forks"];
 
 const baseUrl = process.env["GITHUB_API_URL"];
 const github = new GitHubClient(token, baseUrl ? { baseUrl } : {});
-const git = new Git(checkout);
+
+// Git reads the token from GH_TOKEN through a helper of our own, so it never
+// appears in argv or in any config file. The empty entry first drops any
+// helper from the user's config, which might otherwise answer with other
+// credentials for the same host.
+const gitConfig: readonly ConfigEntry[] = [
+  ["credential.helper", ""],
+  ["credential.helper", '!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'],
+];
 
 function log(message: string): void {
   process.stderr.write(`${new Date().toISOString()} ${message}\n`);
 }
 
-async function poll(): Promise<void> {
+async function openClone(): Promise<Git> {
+  try {
+    await access(cloneDir);
+    return new Git(cloneDir, { config: gitConfig });
+  } catch {
+    const url = cloneUrl(repo, baseUrl);
+    log(`cloning ${url} into ${cloneDir}`);
+    await mkdir(root, { recursive: true });
+    return Git.clone(url, cloneDir, { bare: true, config: gitConfig });
+  }
+}
+
+async function poll(git: Git): Promise<void> {
   const pulls = await github.listPullRequests(repo);
   const eligible = allowForks ? pulls : pulls.filter((pr) => !isFromFork(pr));
   if (eligible.length < pulls.length) {
@@ -115,10 +143,11 @@ async function poll(): Promise<void> {
   }
 }
 
-log(`watching ${repo}; checkout ${checkout}; previews under ${root}`);
+log(`watching ${repo}; previews under ${root}`);
+const git = await openClone();
 for (;;) {
   try {
-    await poll();
+    await poll(git);
   } catch (error) {
     log(`poll failed: ${(error as Error).message}`);
   }

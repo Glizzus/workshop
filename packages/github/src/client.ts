@@ -1,4 +1,5 @@
 import { GITHUB_API_BASE_URL, GITHUB_API_VERSION } from "./constants.js";
+import { parseRepository } from "./logic.js";
 import type { ErrorDetail, PullRequest } from "./types.js";
 
 /** Options for {@link GitHubClient.listPullRequests}. */
@@ -83,9 +84,6 @@ export class GitHubClient {
 
 /** `owner/name` as the two path segments the API wants, each encoded. */
 function repoPath(repo: string): string {
-  const parts = repo.split("/");
-  if (parts.length !== 2 || parts.some((p) => p === "")) {
-    throw new Error(`repository must be owner/name, got ${JSON.stringify(repo)}`);
-  }
-  return parts.map(encodeURIComponent).join("/");
+  const { owner, name } = parseRepository(repo);
+  return `${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
 }

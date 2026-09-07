@@ -36,24 +36,24 @@ describe("apply", () => {
       calls.push({ args, cwd: options?.cwd });
       return Promise.resolve({ stdout: "", stderr: "" });
     });
-    return { git: new Git("/repo", run), calls };
+    return { git: new Git("/repo", { runner: run }), calls };
   }
 
-  it("creates by fetching the PR head and adding a detached worktree", async () => {
+  it("creates by fetching the PR head and adding a worktree detached at its sha", async () => {
     const { git, calls } = fakeGit();
     await apply(git, "/root", { kind: "create", number: 7, sha: "s" });
     expect(calls).toEqual([
       { args: ["fetch", "origin", "pull/7/head"], cwd: "/repo" },
-      { args: ["worktree", "add", "--detach", previewDir("/root", 7), "FETCH_HEAD"], cwd: "/repo" },
+      { args: ["worktree", "add", "--detach", previewDir("/root", 7), "s"], cwd: "/repo" },
     ]);
   });
 
-  it("updates by fetching and checking out inside the worktree", async () => {
+  it("updates by fetching and checking out the sha inside the worktree", async () => {
     const { git, calls } = fakeGit();
     await apply(git, "/root", { kind: "update", number: 7, sha: "s" });
     expect(calls).toEqual([
       { args: ["fetch", "origin", "pull/7/head"], cwd: "/repo" },
-      { args: ["checkout", "--detach", "FETCH_HEAD"], cwd: "/root/pr-7" },
+      { args: ["checkout", "--detach", "s"], cwd: "/root/pr-7" },
     ]);
   });
 

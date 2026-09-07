@@ -1,4 +1,4 @@
-import { gitRunner, type Runner } from "./run.js";
+import { gitRunner, type RunOptions, type Runner } from "./run.js";
 import { parseWorktreeList, type Worktree } from "./worktree-list.js";
 
 /** Options for {@link Git.worktreeAdd}. */
@@ -21,6 +21,30 @@ export interface CheckoutOptions {
   detach?: boolean;
 }
 
+/** Options for {@link Git.clone}. */
+export interface CloneOptions {
+  /** `--bare`: no working tree. Enough when every checkout is a worktree. */
+  bare?: boolean;
+}
+
+/**
+ * A `key=value` pair passed as `git -c key=value`. Order matters: git applies
+ * them in sequence, so an empty value first resets a multi-valued key.
+ */
+export type ConfigEntry = readonly [key: string, value: string];
+
+/** How a {@link Git} runs git. */
+export interface GitOptions {
+  /** Executes git; defaults to spawning the `git` on PATH. */
+  runner?: Runner;
+  /**
+   * Configuration applied to every invocation via `-c`, without touching
+   * any config file. For settings the process must own, such as a
+   * credential helper that reads a token from the environment.
+   */
+  config?: readonly ConfigEntry[];
+}
+
 /**
  * One repository, addressed by a directory that git can resolve to it: the
  * main checkout or any of its worktrees. Methods mirror git subcommands and
@@ -28,16 +52,27 @@ export interface CheckoutOptions {
  */
 export class Git {
   readonly dir: string;
-  readonly #run: Runner;
+  readonly #options: GitOptions;
 
-  constructor(dir: string, runner: Runner = gitRunner) {
+  constructor(dir: string, options: GitOptions = {}) {
     this.dir = dir;
-    this.#run = runner;
+    this.#options = options;
   }
 
-  /** A `Git` for another directory of the same repository, sharing the runner. */
+  /**
+   * `git clone [--bare] <url> <dir>`, returning a `Git` for the clone. The
+   * parent of `dir` must exist; git creates `dir` itself.
+   */
+  static async clone(url: string, dir: string, options: CloneOptions & GitOptions = {}): Promise<Git> {
+    const { bare, ...rest } = options;
+    const git = new Git(dir, rest);
+    await git.#run(bare ? ["clone", "--bare", url, dir] : ["clone", url, dir]);
+    return git;
+  }
+
+  /** A `Git` for another directory of the same repository, sharing runner and config. */
   at(dir: string): Git {
-    return new Git(dir, this.#run);
+    return new Git(dir, this.#options);
   }
 
   /**
@@ -78,5 +113,11 @@ export class Git {
 
   #git(args: readonly string[]): ReturnType<Runner> {
     return this.#run(args, { cwd: this.dir });
+  }
+
+  /** Runs git with the configured `-c` entries prepended. */
+  #run(args: readonly string[], options?: RunOptions): ReturnType<Runner> {
+    const config = (this.#options.config ?? []).flatMap(([key, value]) => ["-c", `${key}=${value}`]);
+    return (this.#options.runner ?? gitRunner)([...config, ...args], options);
   }
 }

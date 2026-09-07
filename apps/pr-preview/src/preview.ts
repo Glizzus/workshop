@@ -72,21 +72,23 @@ export async function runHook(name: "up" | "down", dir: string, env: HookEnv): P
 }
 
 /**
- * Carries out one action against the checkout. Create and update both fetch
- * the head into FETCH_HEAD, which works for forks too, then either add a
- * detached worktree or move the existing one. Neither creates a branch, so
- * there is nothing to clean up in refs/heads.
+ * Carries out one action against the clone. Create and update both fetch
+ * the pull request's head ref, which works for forks too, then put a
+ * detached worktree at the sha the API reported rather than at FETCH_HEAD:
+ * FETCH_HEAD is per-worktree, and pinning the sha keeps the worktree in
+ * step with what state records even if the ref moved meanwhile. Neither
+ * creates a branch, so there is nothing to clean up in refs/heads.
  */
 export async function apply(git: Git, root: string, action: Action): Promise<void> {
   const dir = previewDir(root, action.number);
   switch (action.kind) {
     case "create":
       await git.fetch("origin", pullRequestHeadRef(action.number));
-      await git.worktreeAdd(dir, "FETCH_HEAD", { detach: true });
+      await git.worktreeAdd(dir, action.sha, { detach: true });
       break;
     case "update":
       await git.fetch("origin", pullRequestHeadRef(action.number));
-      await git.at(dir).checkout("FETCH_HEAD", { detach: true });
+      await git.at(dir).checkout(action.sha, { detach: true });
       break;
     case "remove":
       await git.worktreeRemove(dir, { force: true });
