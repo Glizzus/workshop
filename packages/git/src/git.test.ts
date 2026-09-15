@@ -35,6 +35,19 @@ describe("Git", () => {
     expect(calls[1]).toEqual({ args: ["checkout", "--detach", "FETCH_HEAD"], cwd: "/wt/pr-7" });
   });
 
+  it("forces a checkout and cleans, with the flags asked for", async () => {
+    const { run, calls } = fakeRunner();
+    const git = new Git("/wt", { runner: run });
+    await git.checkout("abc", { force: true, detach: true });
+    await git.clean();
+    await git.clean({ directories: true, ignored: true });
+    expect(calls.map((c) => c.args)).toEqual([
+      ["checkout", "--force", "--detach", "abc"],
+      ["clean", "-f"],
+      ["clean", "-fdx"],
+    ]);
+  });
+
   it("removes a worktree, forcing only when asked", async () => {
     const { run, calls } = fakeRunner();
     const git = new Git("/repo", { runner: run });

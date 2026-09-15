@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Git, type Runner, type Worktree } from "@glizzus/git";
 
-import { PORT_RANGE, allocatePort, apply, existingPreviews, previewDir } from "./preview.js";
+import { PORT_RANGE, allocatePort, apply, existingPreviews, hookPath, previewDir } from "./preview.js";
 
 function worktree(p: string): Worktree {
   return { path: p, head: "x", branch: undefined, detached: true, bare: false, locked: false, prunable: false };
@@ -19,6 +19,13 @@ describe("existingPreviews", () => {
       { number: 4, sha: "abc" },
       { number: 9, sha: undefined },
     ]);
+  });
+});
+
+describe("hookPath", () => {
+  it("points at the operator's hooks directory, never into a worktree", () => {
+    expect(hookPath("/root", "up")).toBe("/root/hooks/up");
+    expect(hookPath("/root", "down")).toBe("/root/hooks/down");
   });
 });
 
@@ -48,12 +55,13 @@ describe("apply", () => {
     ]);
   });
 
-  it("updates by fetching and checking out the sha inside the worktree", async () => {
+  it("updates by fetching, force-checking out the sha, and cleaning the worktree", async () => {
     const { git, calls } = fakeGit();
     await apply(git, "/root", { kind: "update", number: 7, sha: "s" });
     expect(calls).toEqual([
       { args: ["fetch", "origin", "pull/7/head"], cwd: "/repo" },
-      { args: ["checkout", "--detach", "s"], cwd: "/root/pr-7" },
+      { args: ["checkout", "--force", "--detach", "s"], cwd: "/root/pr-7" },
+      { args: ["clean", "-fdx"], cwd: "/root/pr-7" },
     ]);
   });
 

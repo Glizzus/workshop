@@ -51,14 +51,20 @@ export interface HookEnv {
   PR_URL?: string;
 }
 
+/** Where the operator's hooks live: `<root>/hooks/<name>`. */
+export function hookPath(root: string, name: "up" | "down"): string {
+  return path.join(root, "hooks", name);
+}
+
 /**
- * Runs `<dir>/.pr-preview/<name>` if the repository ships one, and returns
- * its exit code; `undefined` when there is no such hook. The hook is
+ * Runs `<root>/hooks/<name>` with the worktree as its working directory and
+ * returns its exit code; `undefined` when there is no such hook. The hook is
  * executed directly, so it needs a shebang and the executable bit, like a
- * git hook.
+ * git hook. Hooks belong to whoever runs the daemon, never to the
+ * repository, so a pull request cannot change what runs for it.
  */
-export async function runHook(name: "up" | "down", dir: string, env: HookEnv): Promise<number | null | undefined> {
-  const hook = path.join(dir, ".pr-preview", name);
+export async function runHook(name: "up" | "down", root: string, dir: string, env: HookEnv): Promise<number | null | undefined> {
+  const hook = hookPath(root, name);
   try {
     await access(hook, constants.X_OK);
   } catch {
@@ -78,6 +84,11 @@ export async function runHook(name: "up" | "down", dir: string, env: HookEnv): P
  * FETCH_HEAD is per-worktree, and pinning the sha keeps the worktree in
  * step with what state records even if the ref moved meanwhile. Neither
  * creates a branch, so there is nothing to clean up in refs/heads.
+ *
+ * Update leaves the worktree pristine: local edits to tracked files are
+ * discarded and every untracked or ignored file is removed. The `up` hook
+ * is free to sed, drop files, and install into the tree, and gets a fresh
+ * checkout to do it to on every push.
  */
 export async function apply(git: Git, root: string, action: Action): Promise<void> {
   const dir = previewDir(root, action.number);
@@ -86,10 +97,13 @@ export async function apply(git: Git, root: string, action: Action): Promise<voi
       await git.fetch("origin", pullRequestHeadRef(action.number));
       await git.worktreeAdd(dir, action.sha, { detach: true });
       break;
-    case "update":
+    case "update": {
       await git.fetch("origin", pullRequestHeadRef(action.number));
-      await git.at(dir).checkout(action.sha, { detach: true });
+      const wt = git.at(dir);
+      await wt.checkout(action.sha, { detach: true, force: true });
+      await wt.clean({ directories: true, ignored: true });
       break;
+    }
     case "remove":
       await git.worktreeRemove(dir, { force: true });
       break;

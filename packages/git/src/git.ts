@@ -19,6 +19,16 @@ export interface WorktreeRemoveOptions {
 /** Options for {@link Git.checkout}. */
 export interface CheckoutOptions {
   detach?: boolean;
+  /** `--force`: throw away local changes to tracked files instead of refusing. */
+  force?: boolean;
+}
+
+/** Options for {@link Git.clean}. Always `-f`; git refuses to clean without it. */
+export interface CleanOptions {
+  /** `-d`: remove untracked directories too. */
+  directories?: boolean;
+  /** `-x`: remove ignored files too, not only untracked ones. */
+  ignored?: boolean;
 }
 
 /** Options for {@link Git.clone}. */
@@ -85,9 +95,15 @@ export class Git {
     await this.#git(refspec === undefined ? ["fetch", remote] : ["fetch", remote, refspec]);
   }
 
-  /** `git checkout [--detach] <ref>` in this directory. */
+  /** `git checkout [--force] [--detach] <ref>` in this directory. */
   async checkout(ref: string, options: CheckoutOptions = {}): Promise<void> {
-    await this.#git(options.detach ? ["checkout", "--detach", ref] : ["checkout", ref]);
+    const flags = [...(options.force ? ["--force"] : []), ...(options.detach ? ["--detach"] : [])];
+    await this.#git(["checkout", ...flags, ref]);
+  }
+
+  /** `git clean -f[d][x]` in this directory. */
+  async clean(options: CleanOptions = {}): Promise<void> {
+    await this.#git(["clean", `-f${options.directories ? "d" : ""}${options.ignored ? "x" : ""}`]);
   }
 
   /** `git worktree add [--detach] <path> <ref>`, returning a `Git` for the new worktree. */

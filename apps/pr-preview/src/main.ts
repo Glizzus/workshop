@@ -2,9 +2,9 @@
 // Polls a GitHub repository every minute and keeps one detached git
 // worktree per open pull request, each with a port of its own. Everything
 // lives under one directory the daemon owns: a bare clone at `repo.git`,
-// worktrees at `pr-<number>`, and `state.json`. If the repository ships
-// `.pr-preview/up`, it runs in the worktree after it is created or moved to
-// a new head; `.pr-preview/down` runs before the worktree is removed.
+// worktrees at `pr-<number>`, `state.json`, and the operator's hooks. If
+// `hooks/up` exists, it runs in the worktree after it is created or moved to
+// a new head; `hooks/down` runs before the worktree is removed.
 //
 //   pr-preview <owner/name> [dir] [--allow-forks]
 //
@@ -117,7 +117,7 @@ async function poll(git: Git): Promise<void> {
       if (action.kind === "remove") {
         const previous = state[key];
         if (previous) {
-          const code = await runHook("down", dir, { PR_NUMBER: key, PR_SHA: previous.sha, PORT: String(previous.port) });
+          const code = await runHook("down", root, dir, { PR_NUMBER: key, PR_SHA: previous.sha, PORT: String(previous.port) });
           if (code !== undefined && code !== 0) log(`down hook for pr-${key} exited ${String(code)}`);
         }
         await apply(git, root, action);
@@ -127,7 +127,7 @@ async function poll(git: Git): Promise<void> {
         const port = state[key]?.port ?? allocatePort(state);
         state[key] = { sha: action.sha, port };
         const pr = byNumber.get(action.number);
-        const code = await runHook("up", dir, {
+        const code = await runHook("up", root, dir, {
           PR_NUMBER: key,
           PR_SHA: action.sha,
           PORT: String(port),
