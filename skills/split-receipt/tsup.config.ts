@@ -10,7 +10,9 @@ export default defineConfig({
   },
   format: ["esm"],
   platform: "node",
-  target: "node24",
+  // Copilot CLI's Node floor. Consumers run these scripts with whatever Node
+  // they have, so the bundles must not use syntax newer than this.
+  target: "node22",
   // Every dependency is bundled in, so dist/ runs anywhere the skill is copied
   // to, with no node_modules beside it. Code shared between scripts lands in
   // dist/chunks/ and is imported relatively, which is why dist/ must be copied

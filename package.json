@@ -7,8 +7,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "install-skills": "skills add ./skills/split-receipt/dist --agent claude-code --copy -y"
+    "test": "pnpm -r test"
   },
   "devDependencies": {
     "skills": "^1.5.23"

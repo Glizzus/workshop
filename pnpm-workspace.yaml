@@ -2,7 +2,7 @@
 
 # Two kinds of workspace member, split by who consumes them:
 #   packages/  libraries -- the engine proper, imported by other members.
-#   skills/    Claude Agent Skills -- a SKILL.md plus the scripts it runs. A
+#   skills/    AI Agent Skills -- a SKILL.md plus the scripts it runs. A
 #              skill is a workspace member so its scripts can depend on the
 #              engine via `workspace:*` instead of duplicating it.
 #   apps/      Runnable programs -- daemons and CLIs that are started rather

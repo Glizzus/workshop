@@ -1,6 +1,7 @@
 ---
 name: split-receipt
 description: Read a receipt image, match it to a YNAB transaction, categorize each line item into the user's YNAB categories, let the user review, then split the transaction in YNAB. Use when the user provides a receipt and asks to process, categorize, or split it.
+compatibility: Requires Node.js 22 or newer, network access to api.ynab.com, and a YNAB personal access token in YNAB_TOKEN.
 ---
 
 # split-receipt

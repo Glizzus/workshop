@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "drizzle-sql-server-migrate": {
+      "source": "./skills/drizzle-sql-server-migrate/dist",
+      "sourceType": "local",
+      "computedHash": "80ef0645b7bf8686d3cf0f73f869c3521edd04f4d3d593a56cee7c3791c872ff"
+    },
     "split-receipt": {
       "source": "./skills/split-receipt/dist",
       "sourceType": "local",
