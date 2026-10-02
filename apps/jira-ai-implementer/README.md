@@ -40,24 +40,26 @@ That is the minimum. Defaults fill in the label (`auto-ai-implement`), the base
 branch (`main`), the window (02:00 to 04:00) and the timeout (90 minutes). The
 full list is under [Configuration](#configuration).
 
-**4. Write the branch hook** at `~/jira-ai/hooks/branch` and make it
-executable. The daemon runs it before each ticket and uses the one line it
-prints as the branch to work on. The branch must already exist on origin and
-its name must contain the issue key. Typically it calls whatever already
-creates branches for you:
+**4. Decide where branches come from.** The daemon never creates a branch. For
+each ticket it looks on origin for a branch whose name contains the issue key
+and works on that. If you have tooling that creates branches, put a script at
+`~/jira-ai/hooks/create-branch` that asks it to; the daemon runs the script
+when no branch exists yet and then waits up to two minutes for one to appear.
+Its output is ignored, only its exit code matters:
 
 ```sh
 #!/bin/sh
-curl -fsS -H "Authorization: Bearer $JIRA_TOKEN" \
+exec curl -fsSL -o /dev/null -H "Authorization: Bearer $JIRA_TOKEN" \
   "https://jira.example.com/rest/scriptrunner/latest/custom/createBranch?issue=$ISSUE_KEY&repo=$REPO"
 ```
 
 ```sh
-chmod +x ~/jira-ai/hooks/branch
+chmod +x ~/jira-ai/hooks/create-branch
 ```
 
-For a first try without that endpoint, push a branch by hand and have the hook
-echo its name.
+The script gets `ISSUE_KEY`, `REPO` and `BASE_BRANCH` in its environment, plus
+the daemon's own. Without a script, push a branch containing the key by hand
+before running the daemon.
 
 **5. Set the tokens:**
 
@@ -73,7 +75,7 @@ ticket, or name one directly:
 node apps/jira-ai-implementer/dist/main.js ~/jira-ai/config.json ~/jira-ai --once --now --issue PROJ-123
 ```
 
-It clones the repository, runs the hook, runs OpenCode, and either opens a draft
+It clones the repository, finds the branch, runs OpenCode, and either opens a draft
 pull request (exit 0) or tells you why not (exit 1). Everything it did is under
 `~/jira-ai/runs/<date>/PROJ-123/`.
 
@@ -109,7 +111,7 @@ Outside the window it sleeps. Inside the window, every five minutes:
 1. Search Jira for open issues in the project with the label, highest priority first, oldest first within a priority.
 2. Drop any issue whose key appears in the head branch of an existing pull request, open or closed. Drop any issue listed under `failed` in `state.json`.
 3. Take the first one left. If there is none, sleep five minutes and look again.
-4. Run `hooks/branch` to get the branch, fetch it, and create a worktree on it.
+4. Find the branch on origin whose name contains the key. If there is none, run `hooks/create-branch` and wait up to two minutes for one to appear. Fetch it and create a worktree on it.
 5. Write the ticket, with its comments, to `ticket.md` and run OpenCode in the worktree with the `implement-jira-issue` skill loaded.
 6. If OpenCode changed something, commit what is uncommitted, push, and open a draft pull request using the `pr.md` OpenCode wrote.
 7. Remove the worktree. On success, the night is over. On failure, note the reason in `state.json` and go back to step 1.
@@ -135,8 +137,9 @@ the end of the window is allowed to finish, up to `opencode.timeoutMinutes`.
 | `opencode.model` | OpenCode's default | `provider/model`, passed to OpenCode as `--model`. |
 | `opencode.timeoutMinutes` | `90` | How long one OpenCode run may take before it is killed. |
 
-Not configurable, on purpose: branches come from the hook, polling is every
-five minutes, pull requests are always drafts, and commits are authored by
+Not configurable, on purpose: a ticket's branch is the one on origin with its
+key in the name, polling is every five minutes, pull requests are always
+drafts, and commits are authored by
 `jira-ai-implementer <jira-ai-implementer@users.noreply.github.com>`.
 
 ## Environment
@@ -146,7 +149,7 @@ five minutes, pull requests are always drafts, and commits are authored by
 - `GITHUB_API_URL`: only for GitHub Enterprise Server, for example `https://github.example.com/api/v3`.
 
 The tokens are removed from OpenCode's environment, so the model cannot push or
-touch Jira no matter what it decides to do. The hook does get them.
+touch Jira no matter what it decides to do. The create-branch hook does get them.
 
 ## The working directory
 
@@ -154,11 +157,12 @@ touch Jira no matter what it decides to do. The hook does get them.
 - `wt-<KEY>`: the worktree for the ticket being worked on. Removed afterwards.
 - `runs/<date>/<KEY>/`: `ticket.md` as the model read it, `pr.md` as it wrote it, `opencode.jsonl` with the full transcript, and `opencode.stderr.log`. Never deleted.
 - `state.json`: the date of the last pull request and the failed tickets with reasons.
-- `hooks/branch`: your script from the quickstart.
+- `hooks/create-branch`: your optional script from the quickstart.
 
 ## When something goes wrong
 
-- **It will not start.** The message says what is missing: a token, the hook, or a bad config value. Config errors name the key.
+- **It will not start.** The message says what is missing: a token or a bad config value. Config errors name the key.
+- **"No branch for PROJ-123 on origin".** Nothing on origin has that key in its name, and either there is no `hooks/create-branch` or the branch it asked for did not appear within two minutes. Check the hook by running it by hand with `ISSUE_KEY=PROJ-123 REPO=owner/name BASE_BRANCH=main`.
 - **A ticket failed.** The reason is in the log and in `state.json`. For OpenCode problems read `runs/<date>/<KEY>/opencode.stderr.log`. "No changes produced" means the model read the ticket and wrote nothing. Fix the ticket or the setup, delete the key from `state.json`, and it will be tried again.
 - **It keeps skipping a ticket.** Either it already has a pull request whose branch name contains the key, or it is under `failed`.
 - **OpenCode flags.** The daemon passes `--auto`, `--dir`, `--format json` and `--model` to `opencode run`, and hands over its own instructions and permissions through `OPENCODE_CONFIG_CONTENT`. If your OpenCode version names these differently, `opencodeArgs` and `opencodeConfig` in `src/opencode.ts` are the only places to change, and both have tests.

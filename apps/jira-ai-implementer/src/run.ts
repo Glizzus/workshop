@@ -14,9 +14,10 @@ import type { GitHubClient } from "@glizzus/github";
 import type { Issue } from "@glizzus/jira";
 
 import type { Config } from "./config.js";
-import type { BranchHookEnv, branchFromHook } from "./hooks.js";
+import type { CreateBranchEnv } from "./hooks.js";
 import { runDir, worktreeDir } from "./layout.js";
 import type { OpencodeInvocation, OpencodeResult } from "./opencode.js";
+import { branchMentions } from "./select.js";
 import { type State, writeState } from "./state.js";
 import { prompt, readPr, writeTicket } from "./ticket.js";
 
@@ -25,10 +26,11 @@ export interface Deps {
   /** The bare clone at `<root>/repo.git`; worktrees are cut from it. */
   git: Git;
   github: GitHubClient;
-  /** The operator's `hooks/branch`; see {@link branchFromHook}. */
-  branchHook: (root: string, env: BranchHookEnv) => Promise<string>;
+  /** The operator's `hooks/create-branch`, run when origin has no branch for the issue yet. */
+  createBranchHook: (root: string, env: CreateBranchEnv) => Promise<boolean>;
   opencode: (inv: OpencodeInvocation) => Promise<OpencodeResult>;
   now: () => Date;
+  sleep: (ms: number) => Promise<void>;
   log: (message: string) => void;
 }
 
@@ -70,8 +72,7 @@ export async function attempt(deps: Deps, ctx: AttemptContext, issue: Issue): Pr
   let result: AttemptResult;
   try {
     deps.log(`${key}: ${summary}`);
-    // The operator's hook names a branch that already exists on origin; the work starts from its tip.
-    branch = await deps.branchHook(root, { ISSUE_KEY: key, REPO: config.repo.github, BASE_BRANCH: base });
+    branch = await findBranch(deps, ctx, key);
     result = await implement(deps, ctx, issue, { branch, wt, run });
   } catch (error) {
     result = { outcome: "failed", reason: message(error) };
@@ -92,6 +93,47 @@ export async function attempt(deps: Deps, ctx: AttemptContext, issue: Issue): Pr
     deps.log(`${key}: could not write state: ${message(error)}`);
   }
   return result;
+}
+
+/** How long to wait for the hook's branch to show up on origin, and how often to look. */
+const BRANCH_WAIT_MS = 2 * 60 * 1000;
+const BRANCH_POLL_MS = 5 * 1000;
+
+/**
+ * The branch on origin for this issue: the one whose name contains the key. When there is none,
+ * the operator's `hooks/create-branch` is asked to make one and origin is watched until it appears.
+ * The daemon never names a branch itself; whoever makes it puts the key in the name, and that same
+ * rule is what later marks the issue as done from its pull request.
+ */
+async function findBranch(deps: Deps, ctx: AttemptContext, key: string): Promise<string> {
+  const { config, root } = ctx;
+  const found = await branchOn(deps, key);
+  if (found) return found;
+
+  const ran = await deps.createBranchHook(root, {
+    ISSUE_KEY: key,
+    REPO: config.repo.github,
+    BASE_BRANCH: config.repo.baseBranch,
+  });
+  if (!ran) throw new Error(`no branch for ${key} on origin, and no hooks/create-branch to make one`);
+
+  const deadline = deps.now().getTime() + BRANCH_WAIT_MS;
+  while (deps.now().getTime() < deadline) {
+    await deps.sleep(BRANCH_POLL_MS);
+    const appeared = await branchOn(deps, key);
+    if (appeared) return appeared;
+  }
+  throw new Error(`no branch for ${key} appeared on origin within ${String(BRANCH_WAIT_MS / 60_000)} minutes`);
+}
+
+/** The first branch on origin whose name contains `key`, logging the others if there are several. */
+async function branchOn(deps: Deps, key: string): Promise<string | undefined> {
+  const matching = (await deps.git.remoteHeads("origin")).filter((name) => branchMentions(name, key));
+  const [first, ...rest] = matching;
+  if (first !== undefined && rest.length > 0) {
+    deps.log(`${key}: several branches on origin carry the key, using ${first} over ${rest.join(", ")}`);
+  }
+  return first;
 }
 
 interface Paths {

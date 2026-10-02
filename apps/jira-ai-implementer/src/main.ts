@@ -17,7 +17,7 @@
 //   runs/<night>/<KEY>/opencode.jsonl       the agent's transcript
 //   runs/<night>/<KEY>/opencode.stderr.log  the agent's stderr
 //   state.json                              the night that got its pull request, and failed keys
-//   hooks/branch                            yours: prints the branch on origin to work on
+//   hooks/create-branch                     yours, optional: asks your tooling for a branch
 //
 // JIRA_TOKEN and GH_TOKEN must be set; GH_TOKEN authenticates both the GitHub
 // API and git, and neither reaches the agent's environment. GITHUB_API_URL
@@ -25,7 +25,7 @@
 // `--now` ignores the window, and `--issue KEY` names the issue instead of
 // searching for one; together they are the dry run.
 
-import { access, constants, mkdir } from "node:fs/promises";
+import { access, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
@@ -38,7 +38,7 @@ import { loadConfig } from "./config.js";
 import { cloneDir } from "./layout.js";
 import { type Step, nextStep, sleepMs } from "./loop.js";
 import { GIT_IDENTITY, instructionFiles, runOpencode } from "./opencode.js";
-import { branchFromHook, branchHookPath } from "./hooks.js";
+import { runCreateBranchHook } from "./hooks.js";
 import { type AttemptContext, type Deps, attempt } from "./run.js";
 import { buildJql, handledKeys, selectNext } from "./select.js";
 import { readState } from "./state.js";
@@ -143,14 +143,6 @@ async function openClone(): Promise<Git> {
   }
 }
 
-// Branches come only from the operator's hook, so a daemon without one has nothing to do tonight
-// and should say so now rather than at 02:00.
-try {
-  await access(branchHookPath(root), constants.X_OK);
-} catch {
-  die(`${branchHookPath(root)} is missing or not executable; it must print the branch to work on`, 2);
-}
-
 const git = await openClone();
 // A worktree whose directory was removed by hand, or by a cleanup that did not
 // tell git, would otherwise make `worktree add` refuse the path. What is left
@@ -166,7 +158,15 @@ for (const worktree of await git.worktreeList()) {
 const instructions = await instructionFiles();
 log(`instructions: ${instructions.join(", ")}`);
 
-const deps: Deps = { git, github, branchHook: branchFromHook, opencode: runOpencode, now: () => new Date(), log };
+const deps: Deps = {
+  git,
+  github,
+  createBranchHook: runCreateBranchHook,
+  opencode: runOpencode,
+  now: () => new Date(),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  log,
+};
 
 const state = await readState(root);
 

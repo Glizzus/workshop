@@ -45,7 +45,7 @@ export function handledKeys(
   const handled = new Set(Object.keys(failed));
   const refs = pullRequests.map((pullRequest) => pullRequest.head.ref);
   for (const key of keys) {
-    if (refs.some((ref) => mentions(ref, key))) handled.add(key);
+    if (refs.some((ref) => branchMentions(ref, key))) handled.add(key);
   }
   return handled;
 }
@@ -56,7 +56,7 @@ export function handledKeys(
  * project key may hold letters, digits and underscores, so those are the characters that would
  * make it part of a longer key. Case-insensitive, since a hook may lowercase.
  */
-function mentions(ref: string, key: string): boolean {
+export function branchMentions(ref: string, key: string): boolean {
   const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^A-Za-z0-9_])${escaped}(?![0-9])`, "i").test(ref);
 }

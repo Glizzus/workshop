@@ -153,6 +153,13 @@ describe("Git", () => {
     expect(calls).toEqual([]);
   });
 
+  it("lists the remote's branches", async () => {
+    const { run, calls } = fakeRunner("abc\trefs/heads/main\ndef\trefs/heads/feature/PROJ-1\n");
+    const heads = await new Git("/repo.git", { runner: run }).remoteHeads("origin");
+    expect(calls).toEqual([{ args: ["ls-remote", "--heads", "origin"], cwd: "/repo.git" }]);
+    expect(heads).toEqual(["main", "feature/PROJ-1"]);
+  });
+
   it("reports the changed paths of a dirty worktree", async () => {
     const { run, calls } = fakeRunner(" M src/git.ts\n?? notes.txt\n");
     const entries = await new Git("/wt/feat", { runner: run }).status();

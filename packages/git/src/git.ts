@@ -1,4 +1,5 @@
 import { gitRunner, type RunOptions, type Runner } from "./run.js";
+import { parseRemoteHeads } from "./remote-heads.js";
 import { parseStatus, type StatusEntry } from "./status.js";
 import { parseWorktreeList, type Worktree } from "./worktree-list.js";
 
@@ -167,6 +168,15 @@ export class Git {
    */
   async worktreePrune(): Promise<void> {
     await this.#git(["worktree", "prune"]);
+  }
+
+  /**
+   * `git ls-remote --heads <remote>`, parsed to branch names. Asks the remote
+   * directly, so it sees a branch the moment it exists, without fetching.
+   */
+  async remoteHeads(remote: string): Promise<string[]> {
+    const { stdout } = await this.#git(["ls-remote", "--heads", remote]);
+    return parseRemoteHeads(stdout);
   }
 
   /** `git status --porcelain`, parsed. An empty array means a clean worktree. */

@@ -48,8 +48,10 @@ interface HarnessOptions {
   /** An error to reject a matching git invocation with. */
   gitError?: (args: readonly string[]) => Error | undefined;
   opencode?: () => Promise<OpencodeResult>;
-  /** What `hooks/branch` says. */
-  branchHook?: () => Promise<string>;
+  /** Branch names on origin, per `ls-remote` call in order; the last one repeats. */
+  heads?: string[][];
+  /** Whether a `hooks/create-branch` exists, and what it does. */
+  createBranchHook?: () => Promise<boolean>;
   state?: State;
 }
 
@@ -65,9 +67,12 @@ interface Harness {
 
 async function harness(options: HarnessOptions = {}): Promise<Harness> {
   const root = await mkdtemp(path.join(os.tmpdir(), "jira-ai-run-"));
+  // Fake time: `sleep` advances it, so the branch wait runs instantly.
+  let clock = new Date("2026-10-01T07:30:00.000Z").getTime();
   const gitArgs: string[][] = [];
   const github: unknown[][] = [];
   const logs: string[] = [];
+  let lsRemoteCalls = 0;
 
   const runner: Runner = (args) => {
     // The `-c` entries a real daemon prepends are not what these tests are about.
@@ -78,6 +83,11 @@ async function harness(options: HarnessOptions = {}): Promise<Harness> {
     const canned = options.stdout?.(argv, root);
     if (canned !== undefined) return Promise.resolve({ stdout: canned, stderr: "" });
     const joined = argv.join(" ");
+    if (joined === "ls-remote --heads origin") {
+      const heads = options.heads ?? [["main", BRANCH]];
+      const names = heads[Math.min(lsRemoteCalls++, heads.length - 1)] ?? [];
+      return Promise.resolve({ stdout: names.map((name) => `abc\trefs/heads/${name}\n`).join(""), stderr: "" });
+    }
     if (joined === "worktree list --porcelain") return Promise.resolve({ stdout: "", stderr: "" });
     if (joined === "status --porcelain") return Promise.resolve({ stdout: " M src/health.ts\n", stderr: "" });
     if (argv[0] === "rev-list") return Promise.resolve({ stdout: "0\n", stderr: "" });
@@ -92,9 +102,13 @@ async function harness(options: HarnessOptions = {}): Promise<Harness> {
         return Promise.resolve({ number: 7, html_url: "https://github.com/owner/name/pull/7" });
       },
     } as unknown as GitHubClient,
-    branchHook: options.branchHook ?? ((): Promise<string> => Promise.resolve(BRANCH)),
+    createBranchHook: options.createBranchHook ?? ((): Promise<boolean> => Promise.resolve(false)),
     opencode: options.opencode ?? ((): Promise<OpencodeResult> => Promise.resolve(ok)),
-    now: () => new Date("2026-10-01T07:30:00.000Z"),
+    now: () => new Date(clock),
+    sleep: (ms: number) => {
+      clock += ms;
+      return Promise.resolve();
+    },
     log: (text: string) => logs.push(text),
   };
 
@@ -129,6 +143,7 @@ describe("attempt: the happy path", () => {
 
     expect(result).toEqual({ outcome: "pr", prUrl: "https://github.com/owner/name/pull/7" });
     expect(argvOf(h)).toEqual([
+      "ls-remote --heads origin",
       `fetch origin +refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}`,
       "worktree list --porcelain",
       `branch --delete --force ${BRANCH}`,
@@ -176,7 +191,8 @@ describe("attempt: the happy path", () => {
     const wt = worktreeDir(h.root, "PROJ-1");
 
     await attempt(h.deps, h.ctx, issue);
-    expect(argvOf(h).slice(0, 4)).toEqual([
+    expect(argvOf(h).slice(0, 5)).toEqual([
+      "ls-remote --heads origin",
       `fetch origin +refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}`,
       "worktree list --porcelain",
       `worktree remove --force ${wt}`,
@@ -197,6 +213,24 @@ describe("attempt: the happy path", () => {
     const result = await attempt(h.deps, h.ctx, issue);
     expect(result.outcome).toBe("pr");
     expect(argvOf(h)).not.toContain("add --all");
+    expect(argvOf(h)).toContain(`push --set-upstream origin ${BRANCH}`);
+  });
+
+  it("asks the hook for a branch when origin has none, then waits for it to appear", async () => {
+    let hookRuns = 0;
+    const h = await harness({
+      heads: [["main"], ["main"], ["main", BRANCH]],
+      createBranchHook: () => {
+        hookRuns += 1;
+        return Promise.resolve(true);
+      },
+    });
+
+    const result = await attempt(h.deps, h.ctx, issue);
+
+    expect(result.outcome).toBe("pr");
+    expect(hookRuns).toBe(1);
+    expect(argvOf(h).filter((line) => line === "ls-remote --heads origin")).toHaveLength(3);
     expect(argvOf(h)).toContain(`push --set-upstream origin ${BRANCH}`);
   });
 
@@ -269,15 +303,40 @@ describe("attempt: failures", () => {
     expect(written.failed).toHaveProperty("PROJ-1");
   });
 
-  it("fails the attempt when the branch hook does, before touching git", async () => {
-    const h = await harness({ branchHook: () => Promise.reject(new Error("branch hook exited 1")) });
+  it("fails when origin has no branch for the issue and there is no hook to make one", async () => {
+    const h = await harness({ heads: [["main"]] });
     const wt = worktreeDir(h.root, "PROJ-1");
 
     const result = await attempt(h.deps, h.ctx, issue);
 
-    expect(result).toEqual({ outcome: "failed", reason: "branch hook exited 1" });
-    expect(argvOf(h)).toEqual([`worktree remove --force ${wt}`]);
+    expect(result).toEqual({
+      outcome: "failed",
+      reason: "no branch for PROJ-1 on origin, and no hooks/create-branch to make one",
+    });
+    expect(argvOf(h)).toEqual(["ls-remote --heads origin", `worktree remove --force ${wt}`]);
     expect(h.ctx.state.failed).toHaveProperty("PROJ-1");
+  });
+
+  it("fails when the hook ran but no branch appeared in time", async () => {
+    const h = await harness({ heads: [["main"]], createBranchHook: () => Promise.resolve(true) });
+
+    const result = await attempt(h.deps, h.ctx, issue);
+
+    expect(result).toEqual({
+      outcome: "failed",
+      reason: "no branch for PROJ-1 appeared on origin within 2 minutes",
+    });
+    expect(h.github).toEqual([]);
+  });
+
+  it("fails when the hook itself fails", async () => {
+    const h = await harness({
+      heads: [["main"]],
+      createBranchHook: () => Promise.reject(new Error("create-branch hook exited 1")),
+    });
+
+    const result = await attempt(h.deps, h.ctx, issue);
+    expect(result).toEqual({ outcome: "failed", reason: "create-branch hook exited 1" });
   });
 
   it("fails the attempt rather than throwing when git cannot even fetch", async () => {
