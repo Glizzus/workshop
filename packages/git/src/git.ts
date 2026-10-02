@@ -1,8 +1,16 @@
 import { gitRunner, type RunOptions, type Runner } from "./run.js";
+import { parseStatus, type StatusEntry } from "./status.js";
 import { parseWorktreeList, type Worktree } from "./worktree-list.js";
 
 /** Options for {@link Git.worktreeAdd}. */
 export interface WorktreeAddOptions {
+  /**
+   * `-b`: create this branch at `ref` and check it out. The branch must not
+   * already exist, and it outlives the worktree, so a caller that wanted it
+   * only for one run deletes it with {@link Git.branchDelete} afterwards.
+   * Mutually exclusive with {@link WorktreeAddOptions.detach}.
+   */
+  branch?: string;
   /**
    * Check out `ref` as a detached HEAD instead of creating a branch. What a
    * throwaway environment wants: nothing to clean up in `refs/heads`.
@@ -35,6 +43,24 @@ export interface CleanOptions {
 export interface CloneOptions {
   /** `--bare`: no working tree. Enough when every checkout is a worktree. */
   bare?: boolean;
+}
+
+/** Options for {@link Git.add}. */
+export interface AddOptions {
+  /** `--all`: stage every change in the worktree, deletions included. */
+  all?: boolean;
+}
+
+/** Options for {@link Git.push}. */
+export interface PushOptions {
+  /** `--set-upstream`: record the pushed remote branch as this branch's upstream. */
+  setUpstream?: boolean;
+}
+
+/** Options for {@link Git.branchDelete}. */
+export interface BranchDeleteOptions {
+  /** `--force`: delete even a branch whose commits are not merged anywhere. */
+  force?: boolean;
 }
 
 /**
@@ -106,11 +132,18 @@ export class Git {
     await this.#git(["clean", `-f${options.directories ? "d" : ""}${options.ignored ? "x" : ""}`]);
   }
 
-  /** `git worktree add [--detach] <path> <ref>`, returning a `Git` for the new worktree. */
+  /**
+   * `git worktree add [-b <branch>] [--detach] <path> <ref>`, returning a `Git`
+   * for the new worktree. `branch` and `detach` are the two ways to decide what
+   * HEAD points at, so asking for both is a mistake rather than a preference.
+   */
   async worktreeAdd(path: string, ref: string, options: WorktreeAddOptions = {}): Promise<Git> {
-    await this.#git(
-      options.detach ? ["worktree", "add", "--detach", path, ref] : ["worktree", "add", path, ref],
-    );
+    if (options.branch !== undefined && options.detach) {
+      throw new Error("worktree add cannot both create a branch and detach HEAD");
+    }
+    const flags =
+      options.branch !== undefined ? ["-b", options.branch] : options.detach ? ["--detach"] : [];
+    await this.#git(["worktree", "add", ...flags, path, ref]);
     return this.at(path);
   }
 
@@ -125,6 +158,65 @@ export class Git {
   async worktreeList(): Promise<Worktree[]> {
     const { stdout } = await this.#git(["worktree", "list", "--porcelain"]);
     return parseWorktreeList(stdout);
+  }
+
+  /**
+   * `git worktree prune`: forget administrative entries for worktrees whose
+   * directories are gone. A cleanup that removed a worktree's directory without
+   * `worktree remove` leaves exactly that behind.
+   */
+  async worktreePrune(): Promise<void> {
+    await this.#git(["worktree", "prune"]);
+  }
+
+  /** `git status --porcelain`, parsed. An empty array means a clean worktree. */
+  async status(): Promise<StatusEntry[]> {
+    const { stdout } = await this.#git(["status", "--porcelain"]);
+    return parseStatus(stdout);
+  }
+
+  /**
+   * `git add --all`: stages every change, deletions included. Only `all` is
+   * supported for now; anything narrower would need pathspecs, which no caller
+   * has asked for, so an options object without it is an error rather than a
+   * silent no-op.
+   */
+  async add(options: AddOptions): Promise<void> {
+    if (!options.all) throw new Error("git add supports only the `all` option for now");
+    await this.#git(["add", "--all"]);
+  }
+
+  /**
+   * `git commit -m <message>`. Identity is not an argument: git reads it from
+   * config, so a caller with no `user.name` and `user.email` on the machine
+   * passes them as {@link GitOptions.config} entries (`["user.name", "..."]`,
+   * `["user.email", "..."]`), which this prepends as `-c` on every invocation.
+   */
+  async commit(message: string): Promise<void> {
+    await this.#git(["commit", "-m", message]);
+  }
+
+  /** `git push [--set-upstream] <remote> <refspec>`. */
+  async push(remote: string, refspec: string, options: PushOptions = {}): Promise<void> {
+    const flags = options.setUpstream ? ["--set-upstream"] : [];
+    await this.#git(["push", ...flags, remote, refspec]);
+  }
+
+  /** `git branch --delete [--force] <name>`. */
+  async branchDelete(name: string, options: BranchDeleteOptions = {}): Promise<void> {
+    const flags = options.force ? ["--force"] : [];
+    await this.#git(["branch", "--delete", ...flags, name]);
+  }
+
+  /**
+   * `git rev-list --count <range>`: how many commits `range` names, so
+   * `origin/main..HEAD` answers whether there is anything to push.
+   */
+  async revListCount(range: string): Promise<number> {
+    const { stdout } = await this.#git(["rev-list", "--count", range]);
+    const count = Number.parseInt(stdout.trim(), 10);
+    if (Number.isNaN(count)) throw new Error(`git rev-list --count ${range} printed ${stdout.trim()}`);
+    return count;
   }
 
   #git(args: readonly string[]): ReturnType<Runner> {

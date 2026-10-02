@@ -37,6 +37,9 @@ describe("GitHubClient.listPullRequests", () => {
     expect(headers["Accept"]).toBe("application/vnd.github+json");
     expect(headers["X-GitHub-Api-Version"]).toBe("2022-11-28");
     expect(headers["User-Agent"]).toBeTruthy();
+    // A bodyless request declares no content type.
+    expect(headers["Content-Type"]).toBeUndefined();
+    expect(init.body).toBeUndefined();
   });
 
   it("uses a configured base URL, tolerating a trailing slash", async () => {
@@ -70,5 +73,36 @@ describe("GitHubClient.listPullRequests", () => {
     stubFetch(502, "bad gateway");
     const error = await new GitHubClient("tok").listPullRequests("octo/repo").catch((e: unknown) => e);
     expect((error as GitHubError).detail).toBeUndefined();
+  });
+});
+
+describe("GitHubClient.createPullRequest", () => {
+  it("posts the pull request and returns the one GitHub answers with", async () => {
+    const created = { number: 12, draft: true };
+    const stub = stubFetch(201, created);
+    const body = { title: "Fix it", head: "fix", base: "main", body: "why", draft: true };
+    const pr = await new GitHubClient("tok").createPullRequest("octo/repo", body);
+
+    expect(pr).toEqual(created);
+    const { url, init } = requested(stub);
+    expect(init.method).toBe("POST");
+    expect(url.toString()).toBe("https://api.github.com/repos/octo/repo/pulls");
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBe("Bearer tok");
+    expect(headers["Accept"]).toBe("application/vnd.github+json");
+    expect(headers["X-GitHub-Api-Version"]).toBe("2022-11-28");
+    expect(headers["User-Agent"]).toBeTruthy();
+    expect(headers["Content-Type"]).toBe("application/json");
+    // draft travels on the wire, or the pull request opens ready for review.
+    expect(JSON.parse(init.body as string)).toEqual(body);
+  });
+
+  it("throws GitHubError carrying the status of a rejected creation", async () => {
+    stubFetch(422, { message: "Validation Failed" });
+    const error = await new GitHubClient("tok")
+      .createPullRequest("octo/repo", { title: "t", head: "fix", base: "main" })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(GitHubError);
+    expect((error as GitHubError).status).toBe(422);
   });
 });

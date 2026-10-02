@@ -1,0 +1,34 @@
+{
+  "name": "@glizzus/jira-ai-implementer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Nightly daemon: picks one labelled Jira issue, implements it with OpenCode in a git worktree, and opens a draft pull request.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "bin": {
+    "jira-ai-implementer": "./dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm build",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@glizzus/git": "workspace:*",
+    "@glizzus/github": "workspace:*",
+    "@glizzus/implement-jira-issue": "workspace:*",
+    "@glizzus/jira": "workspace:*",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

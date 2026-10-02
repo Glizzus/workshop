@@ -1,8 +1,8 @@
 {
-  "name": "@glizzus/github",
+  "name": "@glizzus/jira",
   "version": "0.0.0",
   "private": true,
-  "description": "Client for the GitHub REST API: pull requests of one repository, listed and created.",
+  "description": "Client for the Jira Server / Data Center REST API v2: search and read issues.",
   "files": [
     "dist"
   ],

@@ -1,6 +1,6 @@
 import { GITHUB_API_BASE_URL, GITHUB_API_VERSION } from "./constants.js";
 import { parseRepository } from "./logic.js";
-import type { ErrorDetail, PullRequest } from "./types.js";
+import type { CreatePullRequestBody, ErrorDetail, PullRequest } from "./types.js";
 
 /** Options for {@link GitHubClient.listPullRequests}. */
 export interface ListPullRequestsOptions {
@@ -57,17 +57,37 @@ export class GitHubClient {
     return this.#request<PullRequest[]>("GET", url);
   }
 
-  async #request<T>(method: "GET", url: URL): Promise<T> {
-    const response = await fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${this.#token}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-        // GitHub rejects requests without one.
-        "User-Agent": "glizzus-workshop",
-      },
-    });
+  /**
+   * POST /repos/{owner}/{repo}/pulls. Opens a pull request and returns it.
+   * `repo` is `owner/name`.
+   *
+   * Pass `draft: true` for a draft pull request. GitHub's REST API cannot
+   * flip that flag afterwards, so it is decided here or not at all.
+   */
+  async createPullRequest(repo: string, body: CreatePullRequestBody): Promise<PullRequest> {
+    const url = new URL(`${this.#baseUrl}/repos/${repoPath(repo)}/pulls`);
+    return this.#request<PullRequest>("POST", url, body);
+  }
+
+  /** Sends `body` as JSON when given one; a request without a body sends no `Content-Type`. */
+  async #request<T>(method: "GET" | "POST", url: URL, body?: unknown): Promise<T> {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.#token}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": GITHUB_API_VERSION,
+      // GitHub rejects requests without one.
+      "User-Agent": "glizzus-workshop",
+    };
+    if (body !== undefined) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const init: RequestInit = { method, headers };
+    if (body !== undefined) {
+      init.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, init);
 
     if (!response.ok) {
       let detail: ErrorDetail | undefined;

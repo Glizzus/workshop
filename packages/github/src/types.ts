@@ -25,6 +25,17 @@ export interface PullRequest {
   };
 }
 
+/** Body of POST /repos/{owner}/{repo}/pulls. */
+export interface CreatePullRequestBody {
+  title: string;
+  /** Branch name (or `owner:branch` for a fork) holding the changes. */
+  head: string;
+  /** Branch the changes are merged into. */
+  base: string;
+  body?: string;
+  draft?: boolean;
+}
+
 /** GitHub's error body. */
 export interface ErrorDetail {
   message: string;

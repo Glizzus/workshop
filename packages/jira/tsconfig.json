@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    // The base denies ambient types, but this package's whole job is calling
+    // `fetch`. It runs on Node 24, so Node's globals are the honest declaration
+    // of what it can rely on -- narrower than pulling in the DOM lib for one
+    // function.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}
