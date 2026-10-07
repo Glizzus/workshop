@@ -1,0 +1,15 @@
+{
+  "name": "@glizzus/exploratory-testing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Agent skill that hunts for bugs in one feature of a running web app through Playwright MCP, one angle per run, and records verified bugs in a report later runs build on.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf dist && cp -r skill dist",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm build"
+  }
+}
