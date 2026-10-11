@@ -1,0 +1,13 @@
+{
+  // The build config denies ambient types and drops test files; vitest runs on
+  // Node and obviously does need the tests, so test mode adds both back.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"],
+  // `extends` inherits the base's exclude, which drops *.test.ts. Clear it, or
+  // this config would cover exactly the files the build already covers.
+  "exclude": []
+}

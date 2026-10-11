@@ -1,0 +1,27 @@
+{
+  "name": "@glizzus/d2-diagrams",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Agent skill that writes D2 diagrams, then formats, renders and lints them so silent mistakes get caught before the PNG is reviewed.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "bin": {
+    "d2check": "./dist/scripts/d2check.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@glizzus/d2": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  }
+}
