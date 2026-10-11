@@ -1,0 +1,15 @@
+{
+  "name": "@glizzus/tanstack-query",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Agent skill that writes, fixes, reviews and tests Vue 3 code using TanStack Query (@tanstack/vue-query v5), with working templates to copy.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf dist && cp -r skill dist",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm build"
+  }
+}

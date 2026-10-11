@@ -1,0 +1,25 @@
+{
+  "about": "Prompts for checking that your agent loads the tanstack-query skill when it should, and not when it shouldn't. Run each prompt 3 times in a Vue project with the skill installed. Pass: should_trigger prompts load SKILL.md in at least 2 of 3 runs; the others in at most 1 of 3.",
+  "prompts": [
+    { "prompt": "Show the user's orders on the account page. The API is GET /api/orders.", "should_trigger": true },
+    { "prompt": "The product list doesn't update after I add a product. Fix it.", "should_trigger": true },
+    { "prompt": "This component fetches in onMounted and keeps loading/error refs. Clean it up.", "should_trigger": true },
+    { "prompt": "Add pagination to the invoices table, 20 per page.", "should_trigger": true },
+    { "prompt": "Add a 'Load more' button to the activity feed.", "should_trigger": true },
+    { "prompt": "Poll the export status every few seconds until it's ready.", "should_trigger": true },
+    { "prompt": "When I go from /users/1 to /users/2 the page still shows user 1.", "should_trigger": true },
+    { "prompt": "Write tests for the TeamSettings page; it loads and saves team settings.", "should_trigger": true },
+    { "prompt": "Make the like button feel instant.", "should_trigger": true },
+    { "prompt": "Upgrade our vue-query code; TypeScript complains about cacheTime and onSuccess.", "should_trigger": true },
+    { "prompt": "We store API responses in a Pinia store. Should we?", "should_trigger": true },
+    { "prompt": "Prefetch the article when the user hovers its link.", "should_trigger": true },
+    { "prompt": "Make the sidebar collapsible and remember the state.", "should_trigger": false },
+    { "prompt": "Center the loading spinner and make it blue.", "should_trigger": false },
+    { "prompt": "Add a route guard that redirects to /login when there is no token.", "should_trigger": false },
+    { "prompt": "Convert this Options API component to <script setup>; it has no data loading.", "should_trigger": false },
+    { "prompt": "Add form validation to the signup form (email format, password length).", "should_trigger": false },
+    { "prompt": "Set up Tailwind in this Vite project.", "should_trigger": false },
+    { "prompt": "In our React app, useQuery refetches too often. Why?", "should_trigger": false },
+    { "prompt": "Write a Node script that downloads all invoices from the API to CSV.", "should_trigger": false }
+  ]
+}

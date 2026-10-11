@@ -1,0 +1,1 @@
+Add tests for the todo detail page (`src/views/TodoDetailView.vue`, route `/todos/:id`). Set up whatever test tooling is needed; Vitest, jsdom, MSW, Testing Library and Vue Test Utils are installed but not configured. Don't change files in `src/`. `npx vitest run` must pass.

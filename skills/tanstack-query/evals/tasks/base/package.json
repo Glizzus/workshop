@@ -1,0 +1,10 @@
+{
+  "name": "eval-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint ."
+  }
+}

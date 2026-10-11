@@ -1,0 +1,1 @@
+Add a page at `/todos/:id` that shows one todo: its title as the page heading, and `Status: Done` or `Status: Open`. Link to it from each todo in the list. The API is `GET /api/todos/:id`, which returns `{ id, title, done }`. Routes live in the exported `routes` array in src/router.ts.

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "frozen-key",
+    "what": "detail query reads props.id once (no getter): navigating /todos/1 -> /todos/2 keeps showing todo 1",
+    "file": "src/views/TodoDetailView.vue",
+    "find": "useQuery(() => todoQueries.detail(props.id))",
+    "replace": "useQuery(todoQueries.detail(props.id))"
+  },
+  {
+    "id": "no-throw",
+    "what": "API client no longer throws on non-2xx: a 404 is treated as data, no error shown",
+    "file": "src/api/client.ts",
+    "find": "if (!response.ok) {",
+    "replace": "if (response.status < 0) {"
+  },
+  {
+    "id": "no-cache-update",
+    "what": "toggle mutation no longer updates the cache: the status text stays the same after toggling",
+    "file": "src/queries/todos.ts",
+    "find": "    onSuccess: (updated) => queryClient.setQueryData(todoQueries.detail(updated.id).queryKey, updated),\n",
+    "replace": ""
+  }
+]

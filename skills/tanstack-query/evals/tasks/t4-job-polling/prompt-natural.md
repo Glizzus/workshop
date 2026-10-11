@@ -1,0 +1,1 @@
+Add a page at `/jobs/:id` that shows a background job's status as `Status: <status>` and keeps it up to date until the job finishes. The API is `GET /api/jobs/:id`, which returns `{ id, status }` with status `queued`, `running`, `done` or `failed`. Routes live in the exported `routes` array in src/router.ts.
