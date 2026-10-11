@@ -4,6 +4,27 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/node':
+      specifier: ^24.13.3
+      version: 24.13.3
+    tsup:
+      specifier: ^8.5.1
+      version: 8.5.1
+    typescript:
+      specifier: ^6.0.3
+      version: 6.0.3
+    vite:
+      specifier: ^8.2.2
+      version: 8.2.2
+    vitest:
+      specifier: ^4.1.10
+      version: 4.1.11
+    zod:
+      specifier: ^4.5.4
+      version: 4.5.4
+
 importers:
 
   .:
@@ -11,6 +32,12 @@ importers:
       skills:
         specifier: ^1.5.23
         version: 1.5.23
+      vite:
+        specifier: 'catalog:'
+        version: 8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
   apps/jira-ai-implementer:
     dependencies:
@@ -27,17 +54,17 @@ importers:
         specifier: workspace:*
         version: link:../../packages/jira
       zod:
-        specifier: ^4.5.4
+        specifier: 'catalog:'
         version: 4.5.4
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
   apps/pr-preview:
@@ -49,70 +76,98 @@ importers:
         specifier: workspace:*
         version: link:../../packages/github
       zod:
-        specifier: ^4.5.4
+        specifier: 'catalog:'
         version: 4.5.4
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
+
+  packages/d2:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
   packages/git:
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
   packages/github:
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
   packages/jira:
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
   packages/ynab:
     dependencies:
       zod:
-        specifier: ^4.5.4
+        specifier: 'catalog:'
         version: 4.5.4
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
+
+  skills/d2-diagrams:
+    dependencies:
+      '@glizzus/d2':
+        specifier: workspace:*
+        version: link:../../packages/d2
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(postcss@8.5.26)(typescript@6.0.3)(yaml@2.9.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   skills/exploratory-testing: {}
 
@@ -124,20 +179,20 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ynab
       zod:
-        specifier: ^4.5.4
+        specifier: 'catalog:'
         version: 4.5.4
     devDependencies:
       '@types/node':
-        specifier: ^24.13.3
+        specifier: 'catalog:'
         version: 24.13.3
       tsup:
-        specifier: ^8.5.1
+        specifier: 'catalog:'
         version: 8.5.1(postcss@8.5.26)(typescript@6.0.3)(yaml@2.9.0)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.10
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
 
 packages:

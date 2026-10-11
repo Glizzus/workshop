@@ -20,8 +20,8 @@
     "@glizzus/d2": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:"
   }
 }

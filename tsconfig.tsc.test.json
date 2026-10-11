@@ -1,0 +1,11 @@
+{
+  // Type-checks a tsc member's tests alongside its source. A member's
+  // tsconfig.test.json is just `"extends": "../../tsconfig.tsc.test.json"`.
+  "extends": "./tsconfig.tsc.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  // `extends` inherits the build preset's exclude, which drops *.test.ts.
+  // Clear it, or this config would cover exactly the files the build covers.
+  "exclude": []
+}

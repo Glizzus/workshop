@@ -10,6 +10,8 @@
     "test": "pnpm -r test"
   },
   "devDependencies": {
-    "skills": "^1.5.23"
+    "skills": "^1.5.23",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

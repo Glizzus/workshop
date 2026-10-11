@@ -22,6 +22,9 @@ export default defineConfig({
   splitting: true,
   esbuildOptions(options) {
     options.chunkNames = "chunks/[name]-[hash]";
+    // Bundle workspace libraries from their src/ (see tsconfig.base.json), so
+    // a skill never ships a stale dist/ of one.
+    options.conditions = ["@glizzus/source"];
   },
   clean: true,
   // Everything the skill ships besides code -- SKILL.md, reference docs -- is

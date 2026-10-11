@@ -1,0 +1,21 @@
+{
+  // Preset for members that emit with tsc: packages/* and apps/*. A member's
+  // tsconfig.json is just `"extends": "../../tsconfig.tsc.json"`.
+  //
+  // ${configDir} resolves to the directory of the config that extends this one
+  // -- the member's -- so the path options can live here instead of being
+  // copied into every member.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "${configDir}/src",
+    "outDir": "${configDir}/dist",
+
+    // The base denies ambient types. Every member so far runs on Node 24 --
+    // fetch, child processes, files -- so Node's globals are the honest
+    // declaration of what it relies on. A member that must not lean on them
+    // extends tsconfig.base.json directly.
+    "types": ["node"]
+  },
+  "include": ["${configDir}/src/**/*.ts"],
+  "exclude": ["${configDir}/src/**/*.test.ts"]
+}

@@ -24,11 +24,11 @@
     "@glizzus/github": "workspace:*",
     "@glizzus/implement-jira-issue": "workspace:*",
     "@glizzus/jira": "workspace:*",
-    "zod": "^4.5.4"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

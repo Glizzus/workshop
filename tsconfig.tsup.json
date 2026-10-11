@@ -1,0 +1,14 @@
+{
+  // Preset for members that emit with tsup (esbuild): the skills with scripts.
+  // tsup does the emitting, so this config only type-checks. That is why it
+  // covers the tests and tsup.config.ts too and never writes output.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+
+    // These are CLIs: they read process.env, spawn processes, and write files
+    // and stdout, so Node's globals are exactly what they may rely on.
+    "types": ["node"]
+  },
+  "include": ["${configDir}/src/**/*.ts", "${configDir}/tsup.config.ts"]
+}

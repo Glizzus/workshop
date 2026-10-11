@@ -16,6 +16,11 @@ export default defineConfig({
   // dependencies by default; this regex overrides that for all of them. Node
   // built-ins stay external regardless.
   noExternal: [/.*/],
+  // Bundle workspace libraries from their src/ (see tsconfig.base.json), so a
+  // skill never ships a stale dist/ of one.
+  esbuildOptions(options) {
+    options.conditions = ["@glizzus/source"];
+  },
   clean: true,
   // SKILL.md and the reference docs are copied from skill/ into dist/ as-is,
   // so dist/ is the complete installable skill directory.

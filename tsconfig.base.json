@@ -1,8 +1,9 @@
 {
-  // Path-shaped options -- rootDir, outDir, include, exclude, files -- are
-  // deliberately absent: TypeScript resolves those against the directory of the
-  // config that *declares* them, so putting them here would point every package
-  // at the repo root. They belong in the package config.
+  // Settings every member shares, whatever it emits with. Members extend one of
+  // the presets built on this -- tsconfig.tsc.json or tsconfig.tsup.json --
+  // which add the path options. Those use ${configDir}; a bare relative path
+  // resolves against the config that *declares* it, which would point every
+  // member at the repo root.
   "compilerOptions": {
     // Node 24 in the dev container; nodenext keeps module resolution honest
     // about ESM/CJS interop and file extensions.
@@ -10,6 +11,10 @@
     "lib": ["es2023"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    // Workspace libraries export their src/ under this condition, so
+    // type-checking a consumer reads a dependency's current source rather than
+    // whatever dist/ was last built. Node ignores it and loads dist/ at runtime.
+    "customConditions": ["@glizzus/source"],
 
     "declaration": true,
     "declarationMap": true,

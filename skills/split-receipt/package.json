@@ -22,12 +22,12 @@
   },
   "dependencies": {
     "@glizzus/ynab": "workspace:*",
-    "zod": "^4.5.4"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "tsup": "^8.5.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
