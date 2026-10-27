@@ -1,0 +1,27 @@
+{
+  "name": "@glizzus/drizzle-sql-server-merge-snapshots",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Agent skill that rebases drizzle-kit v1 mssql snapshot.json files after branches with non-conflicting migrations are merged.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "bin": {
+    "merge-snapshots": "./dist/scripts/merge-snapshots.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

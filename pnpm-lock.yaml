@@ -169,6 +169,21 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  skills/drizzle-sql-server-merge-snapshots:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(postcss@8.5.26)(typescript@6.0.3)(yaml@2.9.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(yaml@2.9.0))
+
   skills/exploratory-testing: {}
 
   skills/implement-jira-issue: {}
