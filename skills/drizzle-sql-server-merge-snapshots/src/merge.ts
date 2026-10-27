@@ -215,16 +215,23 @@ export function diffDdl(before: Entity[], after: Entity[]): Change[] {
  * Plans the rewrite of every snapshot so that, in folder-name order, each one
  * has the previous folder as its only parent and contains everything before
  * it. Returns only the snapshots that change. Writes nothing.
+ *
+ * With `onto`, that folder and everything before it are trusted as-is and
+ * only the folders after it are rewritten, so broken old history is skipped.
  */
-export function plan(migrations: Migration[]): Plan {
+export function plan(migrations: Migration[], onto?: string): Plan {
   const sorted = [...migrations].sort((x, y) => (x.folder < y.folder ? -1 : x.folder > y.folder ? 1 : 0));
   const position = new Map(sorted.map((m, i) => [m.snapshot.id, i]));
   const rewrites: Rewrite[] = [];
   const conflicts: Conflict[] = [];
   const warnings: string[] = [];
 
-  let prev: { migration: Migration; ddl: Entity[] } | undefined;
+  const start = onto === undefined ? 0 : sorted.findIndex((m) => m.folder === onto) + 1;
+  if (onto !== undefined && start === 0) throw new Error(`--onto ${onto}: no such migration folder`);
+  const anchor = sorted[start - 1];
+  let prev: { migration: Migration; ddl: Entity[] } | undefined = anchor && { migration: anchor, ddl: anchor.snapshot.ddl };
   for (const [i, m] of sorted.entries()) {
+    if (i < start) continue;
     const { snapshot } = m;
     if (snapshot.dialect !== "mssql") throw new Error(`${m.folder}: dialect is "${snapshot.dialect}", expected "mssql"`);
     if (snapshot.version !== "2") {
@@ -235,10 +242,19 @@ export function plan(migrations: Migration[]): Plan {
     // folder at the time, which is the parent that sorts last.
     let base: Migration | undefined;
     for (const id of snapshot.prevIds) {
-      if (id === ORIGIN_ID) continue;
+      if (id === ORIGIN_ID) {
+        if (anchor) throw new Error(`${m.folder}: generated on an empty database, before --onto ${onto}; run without --onto`);
+        continue;
+      }
       const at = position.get(id);
       if (at === undefined) throw new Error(`${m.folder}: parent snapshot ${id} is not in the folder`);
       if (at >= i) throw new Error(`${m.folder}: parent ${sorted[at]!.folder} sorts after it; rename one of the folders`);
+      // Its branch forked before the anchor, so the anchor lacks that
+      // branch's earlier changes and the merge would drop them.
+      if (at < start - 1) {
+        const fork = sorted[at]!.folder;
+        throw new Error(`${m.folder}: forked at ${fork}, before --onto ${onto}; use --onto ${fork} or earlier`);
+      }
       if (!base || at > position.get(base.snapshot.id)!) base = sorted[at];
     }
     if (snapshot.prevIds.length > 1) {

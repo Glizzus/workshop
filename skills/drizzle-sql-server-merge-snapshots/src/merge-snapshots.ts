@@ -4,9 +4,10 @@
 // per snapshot. Dry run unless --write is given; refuses to write anything
 // when two migrations changed the same entity.
 //
-//   merge-snapshots [migrations-dir] [--write]
+//   merge-snapshots [migrations-dir] [--onto <folder>] [--write]
 //
-// migrations-dir defaults to ./drizzle. Exit 0 when nothing needs changing or
+// migrations-dir defaults to ./drizzle. --onto trusts that folder and every
+// folder before it as-is and rewrites only the ones after it. Exit 0 when nothing needs changing or
 // the rewrite was saved, 1 on a conflict or error, 2 when a dry run found
 // snapshots to rewrite.
 
@@ -18,7 +19,7 @@ import { entityLabel, ORIGIN_ID, plan, type Change, type Migration, type Snapsho
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { write: { type: "boolean", default: false } },
+  options: { write: { type: "boolean", default: false }, onto: { type: "string" } },
 });
 const dir = positionals[0] ?? "./drizzle";
 
@@ -47,7 +48,7 @@ const migrations: Migration[] = readdirSync(dir, { withFileTypes: true })
 
 let result;
 try {
-  result = plan(migrations);
+  result = plan(migrations, values.onto);
 } catch (e) {
   fail((e as Error).message);
 }

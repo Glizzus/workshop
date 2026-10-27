@@ -19,6 +19,10 @@ For mssql, drizzle-kit 1.0.0-beta `generate` diffs the schema against the snapsh
 3. Show the user that output. On their go-ahead, rerun with `--write`. Then `git diff` shows the same changes in the files.
 4. Run the project's generate command. With no schema changes since the merge it should report nothing to migrate.
 
+## Old history
+
+If it fails on migrations older than the branches you merged, rerun with `--onto <folder>`, naming the last migration folder before either branch's work. That folder and everything before it are left alone. If it says a migration forked before that folder, use the folder it names.
+
 ## When it refuses
 
 It writes nothing and exits 1 when two migrations changed the same entity in different ways, or one dropped a table or column the other used. That is a real schema conflict: delete the later branch's migration folder, merge the schema in TypeScript, and generate again on top.

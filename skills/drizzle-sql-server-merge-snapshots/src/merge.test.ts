@@ -108,6 +108,29 @@ describe("plan", () => {
     expect(warnings).toEqual([expect.stringContaining("004_c was generated with several parents")]);
   });
 
+  it("with onto, trusts that folder and rewrites only the ones after it", () => {
+    const broken = migration("002_broken", "B", ["missing"], [...users, table("legacy")]);
+    const posts = migration("003_posts", "P", ["B"], [...users, table("legacy"), table("posts")]);
+    const orders = migration("004_orders", "O", ["B"], [...users, table("legacy"), table("orders")]);
+    const { rewrites, conflicts } = plan([init, broken, posts, orders], "002_broken");
+
+    expect(conflicts).toEqual([]);
+    expect(rewrites.map((r) => r.folder)).toEqual(["004_orders"]);
+    expect(rewrites[0]!.snapshot.prevIds).toEqual(["P"]);
+    expect(rewrites[0]!.snapshot.ddl.map(entityLabel)).toContain("tables dbo.posts");
+  });
+
+  it("with onto, rejects a branch that forked before that folder", () => {
+    const b1 = migration("002_b1", "B1", ["I"], [...users, table("b1")]);
+    const c2 = migration("003_c2", "C2", ["I"], [...users, table("c2")]);
+    const d1 = migration("004_d1", "D1", ["B1"], [...users, table("b1"), table("d1")]);
+    expect(() => plan([init, b1, c2, d1], "003_c2")).toThrow("forked at 002_b1, before --onto 003_c2");
+  });
+
+  it("rejects an onto folder that does not exist", () => {
+    expect(() => plan([init], "999_nope")).toThrow("no such migration folder");
+  });
+
   it("rejects a parent that is not in the folder", () => {
     expect(() => plan([init, migration("002_a", "A", ["missing"], users)])).toThrow("parent snapshot missing");
   });
